@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Face2Face — 讨论组</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181c;
+      --border: #2a2a30;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --passion: #f97316;
+      --passion-bg: rgba(249, 115, 22, 0.12);
+      --rational: #3b82f6;
+      --rational-bg: rgba(59, 130, 246, 0.12);
+      --humor: #a855f7;
+      --humor-bg: rgba(168, 85, 247, 0.12);
+      --summary: #22c55e;
+      --summary-bg: rgba(34, 197, 94, 0.12);
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      min-height: 100vh;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    main {
+      padding: 1.5rem 2rem 2rem;
+      max-width: 820px;
+    }
+    header {
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.25rem 0;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .input-row input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.95rem;
+    }
+    .input-row input::placeholder { color: var(--text-muted); }
+    .input-row input:focus {
+      outline: none;
+      border-color: var(--rational);
+      box-shadow: 0 0 0 3px var(--rational-bg);
+    }
+    .btn {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--rational);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+    .dialogue {
+      margin-top: 1rem;
+    }
+    .turn {
+      margin-bottom: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      border-left: 4px solid var(--border);
+    }
+    .turn.passion  { border-color: var(--passion);  background: var(--passion-bg); }
+    .turn.rational { border-color: var(--rational); background: var(--rational-bg); }
+    .turn.humor   { border-color: var(--humor);   background: var(--humor-bg); }
+    .turn.summary { border-color: var(--summary); background: var(--summary-bg); }
+    .turn .role {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .turn.passion .role  { color: var(--passion); }
+    .turn.rational .role { color: var(--rational); }
+    .turn.humor .role   { color: var(--humor); }
+    .turn.summary .role { color: var(--summary); }
+    .turn .content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .loading {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .loading .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--rational);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error {
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      margin-top: 1rem;
+    }
+    aside {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+    @media (max-width: 900px) {
+      aside { border-left: none; border-top: 1px solid var(--border); }
+    }
+    .history-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .history-list li {
+      margin-bottom: 0.5rem;
+    }
+    .history-list button {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .history-list button:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border);
+    }
+    .history-list button.active {
+      background: var(--rational-bg);
+      border-color: var(--rational);
+      color: var(--rational);
+    }
+    .empty-history {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      padding: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <main>
+      <header>
+        <h1>Face2Face</h1>
+        <p class="sub">选择讨论组，输入主题，开始 2 轮讨论</p>
+      </header>
+      <div class="input-row" style="align-items: center;">
+        <select id="groupSelect" style="padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; min-width: 140px;">
+          <option value="1">讨论组一</option>
+          <option value="2">讨论组二</option>
+        </select>
+        <input type="text" id="topic" placeholder="输入讨论主题，例如：AI 是否会替代人类" style="flex: 1;" />
+        <button type="button" class="btn btn-primary" id="runBtn">开始讨论</button>
+      </div>
+      <div id="message"></div>
+      <div id="dialogue" class="dialogue"></div>
+    </main>
+    <aside>
+      <div class="history-title">讨论历史</div>
+      <ul class="history-list" id="historyList"></ul>
+      <p class="empty-history" id="emptyHistory">暂无记录</p>
+    </aside>
+  </div>
+  <script>
+    const topicInput = document.getElementById("topic");
+    const runBtn = document.getElementById("runBtn");
+    const messageEl = document.getElementById("message");
+    const dialogueEl = document.getElementById("dialogue");
+    const historyListEl = document.getElementById("historyList");
+    const emptyHistoryEl = document.getElementById("emptyHistory");
+
+    function getRoleClass(role) {
+      if (!role) return "";
+      if (role.includes("总结")) return "summary";
+      if (role.includes("乔布斯") || role.includes("特朗普")) return "passion";
+      if (role.includes("马斯克") || role.includes("巴菲特") || role.includes("张一鸣")) return "rational";
+      if (role.includes("比尔·盖茨") && !role.includes("总结")) return "humor";
+      if (role.includes("客观激情")) return "passion";
+      if (role.includes("冷静理性")) return "rational";
+      if (role.includes("反讽幽默")) return "humor";
+      if (role.includes("Agent A")) return "passion";
+      if (role.includes("Agent B")) return "rational";
+      return "";
+    }
+
+    function renderTurns(turns) {
+      if (!turns || !turns.length) return "";
+      return turns.map(t => {
+        const cls = getRoleClass(t.role);
+        return `<div class="turn ${cls}">
+          <div class="role">${escapeHtml(t.role)}</div>
+          <div class="content">${escapeHtml(t.content)}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function escapeHtml(s) {
+      if (!s) return "";
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function showMessage(html, isError) {
+      messageEl.innerHTML = html;
+      messageEl.className = isError ? "error" : "";
+    }
+
+    function showDialogue(result) {
+      const turns = result.turns || [];
+      dialogueEl.innerHTML = renderTurns(turns);
+      messageEl.innerHTML = "";
+    }
+
+    function setLoading(loading) {
+      runBtn.disabled = loading;
+      if (loading) {
+        showMessage('<span class="spinner"></span> 正在生成对话，请稍候…（约 1–2 分钟）', false);
+        dialogueEl.innerHTML = "";
+      }
+    }
+
+    async function runDiscussion() {
+      const topic = topicInput.value.trim();
+      const groupId = (document.getElementById("groupSelect") && document.getElementById("groupSelect").value) || "1";
+      if (!topic) {
+        showMessage("请先输入讨论主题。", true);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, group_id: groupId }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          showMessage("错误：" + (data.error || "请求失败"), true);
+          return;
+        }
+        showDialogue(data.result);
+        loadHistory();
+        const activeBtn = historyListEl.querySelector("button.active");
+        if (activeBtn) activeBtn.classList.remove("active");
+      } catch (e) {
+        showMessage("网络错误：" + e.message, true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/history");
+        const data = await res.json();
+        if (!data.ok) return;
+        const items = data.items || [];
+        emptyHistoryEl.style.display = items.length ? "none" : "block";
+        historyListEl.innerHTML = items.map(item => {
+          const label = item.group_name ? item.group_name + " · " + item.topic : item.topic;
+          return `<li>
+            <button type="button" data-filename="${escapeHtml(item.filename)}">${escapeHtml(label)}</button>
+          </li>`;
+        }).join("");
+        historyListEl.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", () => loadHistoryItem(btn.dataset.filename, btn));
+        });
+      } catch (e) {
+        emptyHistoryEl.textContent = "加载失败";
+      }
+    }
+
+    async function loadHistoryItem(filename, btn) {
+      historyListEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      try {
+        const res = await fetch("/api/history/" + encodeURIComponent(filename));
+        const data = await res.json();
+        if (!data.ok) {
+          showMessage("加载失败：" + (data.error || ""), true);
+          return;
+        }
+        showDialogue(data.result);
+        showMessage("", false);
+      } catch (e) {
+        showMessage("加载失败：" + e.message, true);
+      }
+    }
+
+    runBtn.addEventListener("click", runDiscussion);
+    topicInput.addEventListener("keydown", e => { if (e.key === "Enter") runDiscussion(); });
+
+    loadHistory();
+  </script>
+</body>
+</html>
