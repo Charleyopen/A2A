@@ -17,13 +17,20 @@ def main():
     if group_id not in GROUPS:
         group_id = "1"
     print(f"已选：{GROUPS[group_id]['name']}\n")
+    rounds_raw = input("请输入轮数 (1-6，回车默认 2)：").strip() or "2"
+    try:
+        rounds = int(rounds_raw)
+    except Exception:
+        rounds = 2
+    rounds = max(1, min(6, rounds))
+    mode = (input("请输入模式 (standard/debate/consensus，回车默认 standard)：").strip() or "standard").lower()
     topic = input("请输入讨论主题：").strip()
     if not topic:
         topic = "人工智能对教育行业的影响"
         print(f"未输入主题，使用默认：{topic}")
-    print(f"\n主题：{topic}\n开始 2 轮讨论…\n")
+    print(f"\n主题：{topic}\n开始 {rounds} 轮讨论（{mode}）…\n")
 
-    result = run_dialogue(topic, group_id=group_id)
+    result = run_dialogue(topic, group_id=group_id, rounds=rounds, mode=mode)
 
     # 可选：将结果写入文件
     out_dir = os.path.join(os.path.dirname(__file__), "outputs")

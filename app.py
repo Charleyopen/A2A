@@ -3,6 +3,7 @@ Face2Face 网页版：可视化三人对话 + 历史记录查看
 """
 import json
 import os
+from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, render_template
 
 from dialogue import run_dialogue, GROUPS
@@ -14,6 +15,13 @@ os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
 def _safe_filename(topic: str) -> str:
     return "".join(c if c.isalnum() or c in " -_" else "_" for c in topic)[:50]
+
+def _parse_int(value, default: int, min_value: int, max_value: int) -> int:
+    try:
+        v = int(value)
+    except Exception:
+        return default
+    return max(min_value, min(max_value, v))
 
 
 @app.route("/")
@@ -39,15 +47,18 @@ def api_run():
     group_id = (data.get("group_id") or "1").strip() or "1"
     if group_id not in GROUPS:
         group_id = "1"
+    rounds = _parse_int(data.get("rounds"), default=2, min_value=1, max_value=6)
+    mode = (data.get("mode") or "standard").strip().lower()
     if not topic:
         return jsonify({"ok": False, "error": "请填写讨论主题"}), 400
     try:
-        result = run_dialogue(topic, group_id=group_id)
-        safe_name = _safe_filename(topic)
-        out_path = os.path.join(OUTPUTS_DIR, f"{safe_name}.json")
+        result = run_dialogue(topic, group_id=group_id, rounds=rounds, mode=mode)
+        safe_name = _safe_filename(topic) or "topic"
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        out_path = os.path.join(OUTPUTS_DIR, f"{safe_name}__g{group_id}__{ts}.json")
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
-        result["_filename"] = f"{safe_name}.json"
+        result["_filename"] = os.path.basename(out_path)
         return jsonify({"ok": True, "result": result})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500

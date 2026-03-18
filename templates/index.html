@@ -214,10 +214,24 @@
       <div class="input-row" style="align-items: center;">
         <select id="groupSelect" style="padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; min-width: 140px;">
           <option value="1">讨论组一</option>
-          <option value="2">讨论组二</option>
         </select>
         <input type="text" id="topic" placeholder="输入讨论主题，例如：AI 是否会替代人类" style="flex: 1;" />
         <button type="button" class="btn btn-primary" id="runBtn">开始讨论</button>
+      </div>
+      <div class="input-row" style="align-items: center; margin-top: -0.5rem;">
+        <select id="roundsSelect" style="padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; min-width: 140px;">
+          <option value="2" selected>轮数：2</option>
+          <option value="3">轮数：3</option>
+          <option value="4">轮数：4</option>
+        </select>
+        <select id="modeSelect" style="padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; min-width: 180px;">
+          <option value="standard" selected>模式：标准</option>
+          <option value="debate">模式：辩论（更尖锐）</option>
+          <option value="consensus">模式：共识（更收敛）</option>
+        </select>
+        <div style="color: var(--text-muted); font-size: 0.85rem; flex: 1;">
+          提示：轮数越多生成越久
+        </div>
       </div>
       <div id="message"></div>
       <div id="dialogue" class="dialogue"></div>
@@ -235,6 +249,9 @@
     const dialogueEl = document.getElementById("dialogue");
     const historyListEl = document.getElementById("historyList");
     const emptyHistoryEl = document.getElementById("emptyHistory");
+    const groupSelectEl = document.getElementById("groupSelect");
+    const roundsSelectEl = document.getElementById("roundsSelect");
+    const modeSelectEl = document.getElementById("modeSelect");
 
     function getRoleClass(role) {
       if (!role) return "";
@@ -289,7 +306,9 @@
 
     async function runDiscussion() {
       const topic = topicInput.value.trim();
-      const groupId = (document.getElementById("groupSelect") && document.getElementById("groupSelect").value) || "1";
+      const groupId = (groupSelectEl && groupSelectEl.value) || "1";
+      const rounds = (roundsSelectEl && roundsSelectEl.value) || "2";
+      const mode = (modeSelectEl && modeSelectEl.value) || "standard";
       if (!topic) {
         showMessage("请先输入讨论主题。", true);
         return;
@@ -299,7 +318,7 @@
         const res = await fetch("/api/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic, group_id: groupId }),
+          body: JSON.stringify({ topic, group_id: groupId, rounds, mode }),
         });
         const data = await res.json();
         if (!data.ok) {
@@ -358,6 +377,22 @@
     runBtn.addEventListener("click", runDiscussion);
     topicInput.addEventListener("keydown", e => { if (e.key === "Enter") runDiscussion(); });
 
+    async function loadGroups() {
+      try {
+        const res = await fetch("/api/groups");
+        const data = await res.json();
+        if (!data.ok) return;
+        const groups = data.groups || [];
+        if (!groups.length) return;
+        groupSelectEl.innerHTML = groups.map(g => {
+          return `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)}（${escapeHtml((g.personas || []).join(" / "))}）</option>`;
+        }).join("");
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    loadGroups();
     loadHistory();
   </script>
 </body>
